@@ -18,15 +18,19 @@
  */
 
 import UIKit
+import CoreData
 
 class Libro {
  
+    var isbn: String
     var titulo: String
     var autores: String
-    var portada: String
+    //var portada: String
+    var portada: UIImage
     
-    init(titulo: String, autores: String, portada: String) {
+    init(isbn: String, titulo: String, autores: String, portada: UIImage) {
     
+        self.isbn = isbn
         self.titulo = titulo
         self.autores = autores
         self.portada = portada
@@ -39,6 +43,8 @@ class PrincipalTablaViewController: UITableViewController {
 
     var tablaLibros = [Libro]()
     
+    var contexto : NSManagedObjectContext? = nil
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -49,6 +55,32 @@ class PrincipalTablaViewController: UITableViewController {
         // self.navigationItem.rightBarButtonItem = self.editButtonItem()
         
         self.title = "Reslustados de Busquedas"
+        
+        self.contexto = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
+        
+        let secionEntidad = NSEntityDescription.entityForName("Libros", inManagedObjectContext: self.contexto!)
+        let peticion = secionEntidad?.managedObjectModel.fetchRequestTemplateForName("petLibros")
+        
+        do {
+            
+            let librosEntidad = try self.contexto?.executeFetchRequest(peticion!)
+            
+            for libro in librosEntidad! {
+                
+                let nuevoLibro = Libro(isbn: libro.valueForKey("isbn") as! String, titulo: libro.valueForKey("titulo") as! String, autores: libro.valueForKey("autores") as! String, portada: UIImage(data: libro.valueForKey("portada") as! NSData)! )
+                
+                tablaLibros.append(nuevoLibro)
+                
+            }
+            
+        }
+        catch {
+            
+            print("ERROR...")
+            
+        }
+        
+        self.tableView.reloadData()
         
     }
 
@@ -135,14 +167,14 @@ class PrincipalTablaViewController: UITableViewController {
             
             //let dest = segue.destinationViewController as? AddViewController
             //dest!.delegate = self
-            print("Ir a Añadir")
+            //print("Ir a Añadir")
             
         }
         else if segue.identifier == "ResultadoSegue" {
             
             let dest = segue.destinationViewController as? ResultadoViewController
             //dest!.delegate = self
-            print("Ir a Resultados")
+            //print("Ir a Resultados")
             
             let libro: Libro!
             
@@ -166,7 +198,7 @@ class PrincipalTablaViewController: UITableViewController {
 
             dest?.titulo = libro.titulo
             dest?.autores = libro.autores
-            dest?.urlPortada = libro.portada
+            dest?.Portada = libro.portada
             
         }
         
@@ -175,20 +207,40 @@ class PrincipalTablaViewController: UITableViewController {
     
 // MARK: - Añadir Libro
     
-    @IBAction func anadirLibro  (segue : UIStoryboardSegue) {
-      
+    @IBAction func anadirLibro (segue : UIStoryboardSegue) {
+
+        //print("Añadir Libros a la Table View")
+        
         if let origen = segue.sourceViewController as? AddViewController {
         
             if (origen.resultadoPortada == nil) {
-                origen.resultadoPortada = "nil"
+                
+                origen.resultadoPortada = UIImage.init(named: "portadaBlack")
+            
             }
             
-            let nuevoLibro = Libro(titulo: origen.resultadoTitulo!, autores: origen.resultadoAutores!, portada: origen.resultadoPortada!)
+            let nuevoLibro = Libro(isbn: origen.resultadoISBN!, titulo: origen.resultadoTitulo!, autores: origen.resultadoAutores!, portada: origen.resultadoPortada!)
             
             tablaLibros.append(nuevoLibro)
             self.tableView.reloadData()
-
-            print("\(tablaLibros)")
+            
+            let nuevaSeccion = NSEntityDescription.insertNewObjectForEntityForName("Libros", inManagedObjectContext: self.contexto!)
+            
+            nuevaSeccion.setValue(origen.resultadoISBN!, forKey: "isbn")
+            nuevaSeccion.setValue(origen.resultadoTitulo!, forKey: "titulo")
+            nuevaSeccion.setValue(origen.resultadoAutores!, forKey: "autores")
+            nuevaSeccion.setValue(UIImagePNGRepresentation(origen.resultadoPortada!), forKey: "portada")
+            
+            do {
+                
+                try self.contexto?.save()
+            
+            }
+            catch {
+            
+                print("Error en guardar en CORE DATA")
+                
+            }
             
         }
         

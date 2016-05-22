@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import CoreData
 
 class AddViewController: UIViewController, UITextFieldDelegate {
 
@@ -17,17 +18,24 @@ class AddViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var OcultaPortadaLabel: UILabel!
     @IBOutlet weak var AnadirButton: UIButton!
     
+    var resultadoISBN : String? = nil
     var resultadoTitulo: String? = nil
     var resultadoAutores: String? = nil
-    var resultadoPortada: String? = nil
+    var resultadoPortada: UIImage? = nil
+    
+    var contexto : NSManagedObjectContext? = nil
     
     override func viewDidLoad() {
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
+        
         self.OcultaPortadaLabel.hidden = false
         self.SearchText.delegate = self
         self.AnadirButton.enabled = false
+        
+        self.contexto = (UIApplication.sharedApplication().delegate as! AppDelegate).managedObjectContext
+        
     }
 
     override func didReceiveMemoryWarning() {
@@ -74,6 +82,40 @@ class AddViewController: UIViewController, UITextFieldDelegate {
             
             self.OcultaPortadaLabel.hidden = false
             
+            // BUSCAR EN EL CORE DATA
+            
+            let secionEntidad = NSEntityDescription.entityForName("Libros", inManagedObjectContext: self.contexto!)
+            let peticion = secionEntidad?.managedObjectModel.fetchRequestFromTemplateWithName("petLibrosXisbn", substitutionVariables: ["isbn":self.SearchText.text!])
+
+            do {
+                
+                let exPeticicon = try self.contexto?.executeFetchRequest(peticion!)
+                
+                if(exPeticicon?.count > 0) {
+                    
+                    ClearAcction()
+                    
+                    let titulo = "Found in CORE DATA"
+                    let mensaje = "ISBN found in CORE DATA"
+                    let boton = "Ok"
+                    
+                    let alertController = UIAlertController(title: titulo, message: mensaje, preferredStyle: UIAlertControllerStyle.Alert)
+                    alertController.addAction(UIAlertAction(title: boton, style: UIAlertActionStyle.Default,handler: nil))
+                    
+                    self.presentViewController(alertController, animated: true, completion: nil)
+                 
+                    return
+                    
+                }
+                
+            }
+            catch {
+                
+                print("ERROR CORE DATA")
+                
+            }
+            // SI NO ESTA EN EL CORE DATA
+            
             let urls = "https://openlibrary.org/api/books?jscmd=data&format=json&bibkeys=ISBN:"
             
             let url = NSURL(string:urls + self.SearchText.text!)
@@ -104,6 +146,7 @@ class AddViewController: UIViewController, UITextFieldDelegate {
                             TituloText.text = title
                             
                             resultadoTitulo = title
+                            resultadoISBN = self.SearchText.text!
                             
                         }
                         ////////////////////////////////////////////////////////////////////////////////////////
@@ -157,7 +200,7 @@ class AddViewController: UIViewController, UITextFieldDelegate {
                                 
                                 let urlcoverL = coverDic["large"] as! NSString as String
                                 
-                                resultadoPortada = urlcoverL as String
+                                //resultadoPortada = urlcoverL as String
                                 
                                 let url = NSURL(string: urlcoverL)
                                 
@@ -171,6 +214,7 @@ class AddViewController: UIViewController, UITextFieldDelegate {
                                         dispatch_async(dispatch_get_main_queue(), {
                                             
                                             self.PortadaImage.image = UIImage(data: data!)
+                                            self.resultadoPortada = self.PortadaImage.image
                                             
                                         });
                                         
@@ -259,7 +303,7 @@ class AddViewController: UIViewController, UITextFieldDelegate {
         
     }
     
-    
+/*
 // MARK: - Navigation
 
     // In a storyboard-based application, you will often want to do a little preparation before navigation
@@ -269,13 +313,5 @@ class AddViewController: UIViewController, UITextFieldDelegate {
         
         
     }
-
-    @IBAction func AnadirAcction(sender: UIButton) {
-        
-        print("Añadir Libro")
-        
-        self.performSegueWithIdentifier("anadirLibroSegue", sender: self)
-    
-    }
-
+*/
 }
