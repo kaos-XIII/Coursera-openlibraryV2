@@ -18,7 +18,7 @@ class ResultadoViewController: UIViewController {
     
     var titulo: String = ""
     var autores: String = ""
-    var urlPortada: String = ""
+    var Portada: UIImage? = nil
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,7 +28,7 @@ class ResultadoViewController: UIViewController {
         TituloLabel.text = titulo
         AutoresLabel.text = autores
         
-        if (urlPortada == "nil") {
+        if (Portada == nil) {
         
             self.PortadaLabel.hidden = false
         
@@ -37,6 +37,8 @@ class ResultadoViewController: UIViewController {
             
             self.PortadaLabel.hidden = true
             
+            self.PortadaImage.image = Portada
+/*
             let url = NSURL(string: urlPortada as String)
         
             dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
@@ -57,11 +59,12 @@ class ResultadoViewController: UIViewController {
                     self.PortadaLabel.hidden = false
                     self.PortadaLabel.text = "Error URL"
                 }
-            
+ 
             }
             
+*/
         }
-        
+ 
     }
 
     override func didReceiveMemoryWarning() {
